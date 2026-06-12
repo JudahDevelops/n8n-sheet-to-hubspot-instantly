@@ -28,7 +28,8 @@ Schedule Trigger (10am daily)
       [loop port] → Create/Update HubSpot Contact  — upserts contact by email
                   → Enroll in Instantly Campaign    — adds lead to active outreach campaign
                   → (loops back)
-      [done port] → (end — no summary node, completion is implicit)
+      [done port] → Build Summary   — counts total leads enrolled
+                  → Post Slack Alert — sends completion summary to #sales-alerts
 ```
 
 ## How It Fits Into the System
@@ -53,9 +54,10 @@ time to complete before Stage 2 reads from the sheet.
 | Google Sheets | `googleSheetsOAuth2Api` | Reading the enriched lead rows |
 | HubSpot | `hubspotAppToken` | Creating/updating contacts in the CRM |
 | Instantly.ai | `instantlyApi` | Enrolling leads in email campaigns |
+| Slack | `slackApi` | Posting a campaign launch summary to #sales-alerts |
 
-**Difficulty to run without credentials:** Moderate. Three credentials are needed, but all
-three have accessible free or trial tiers. The main friction point is Instantly.ai: the
+**Difficulty to run without credentials:** Moderate. Four credentials are needed, but all
+have accessible free or trial tiers. The main friction point is Instantly.ai: the
 `campaign` field is not exposed in the n8n node UI on import and must be added manually via
 "+ Add Field" after deploying. The campaign ID itself must be copied from the Instantly
 dashboard. HubSpot has a free CRM tier. Google Sheets just needs an OAuth connection.
@@ -72,7 +74,8 @@ Without that step, leads will not be enrolled in any campaign.
 
 - Run manually from n8n after ensuring the Google Sheet has at least a few rows of data
 - The clearest demo sequence: show the Sheet with leads → run workflow → show new contacts
-  appearing in HubSpot → show leads appearing in the Instantly campaign dashboard
+  appearing in HubSpot → show leads appearing in the Instantly campaign dashboard → show the
+  Slack summary alert firing in #sales-alerts
 - HubSpot contact creation is idempotent (upsert by email) — safe to re-run without duplicates
 - For a demo without live data, manually add 2–3 test rows to the Google Sheet with
   real-looking names, emails, and company names before running
